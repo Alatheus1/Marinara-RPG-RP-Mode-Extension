@@ -1441,6 +1441,28 @@
   width: 100%;
 }
 
+/* Phase 7 — "Re-sync to chat lorebook" button + status message live at
+   the top of the flyout body. Inline so the message sits to the right
+   of the button. */
+.mrrp-spellbook__sync-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--mrrp-hairline);
+}
+.mrrp-spellbook__sync-btn { flex: 0 0 auto; }
+.mrrp-spellbook__sync-msg {
+  font-size: 11px;
+  color: var(--mrrp-text-dim);
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.mrrp-spellbook__sync-msg--ok   { color: var(--mrrp-ok); }
+.mrrp-spellbook__sync-msg--warn { color: var(--mrrp-warn); }
+.mrrp-spellbook__sync-msg--err  { color: var(--mrrp-fail); }
+
 .mrrp-spellbook-ab__name { font-weight: 500; font-size: 12px; }
 .mrrp-spellbook-ab__cost {
   font-family: var(--mrrp-mono);
