@@ -280,6 +280,24 @@
   border-color: var(--mrrp-accent-dim);
 }
 
+/* Phase 7 — charm/spell action buttons.
+   --cast: primary action, wider than default, accent-coloured.
+   --icon: square icon-sized button for Edit (✎) and Delete (×) so the
+   spellbook ability row stays on one line. */
+.mrrp-char-btn--cast {
+  min-width: 56px;
+  font-weight: 600;
+  padding: 2px 10px;
+}
+.mrrp-char-btn--icon {
+  width: 24px;
+  min-width: 24px;
+  padding: 2px 0;
+  text-align: center;
+  font-size: 13px;
+  line-height: 1.1;
+}
+
 .mrrp-draggable-handle { cursor: grab; user-select: none; touch-action: none; }
 .mrrp-draggable-handle:active { cursor: grabbing; }
 
@@ -1399,14 +1417,28 @@
 .mrrp-spellbook-cat__add { margin-top: 4px; }
 
 .mrrp-spellbook-ab {
+  /* Phase 7 — five columns now: name (flex), cost (auto), Cast (auto),
+     Edit (icon, auto), Delete (icon, auto). Was 4-col grid which forced
+     one of the three action buttons to wrap to a new line. */
   display: grid;
-  grid-template-columns: 1fr auto auto auto;
+  grid-template-columns: 1fr auto auto auto auto;
   align-items: center;
   gap: 4px;
   padding: 2px 4px;
   background: var(--mrrp-bg-elev);
   border-radius: var(--mrrp-radius-sm);
   border: 1px solid var(--mrrp-border);
+}
+
+/* Phase 7 — the per-category hide button on the category head sits to
+   the right of the score input (when present) and uses a muted style so
+   the head still reads as a title button. */
+.mrrp-spellbook-cat__hide {
+  margin-left: auto;
+}
+.mrrp-spellbook__show-hidden {
+  margin-top: 6px;
+  width: 100%;
 }
 
 .mrrp-spellbook-ab__name { font-weight: 500; font-size: 12px; }

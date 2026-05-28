@@ -987,6 +987,9 @@
     ],
     "abilities": {
       "label": "Gifts & Rites",
+      "hideSpellFields": true,
+      "showCategoryScores": false,
+      "hideEmptyCategories": true,
       "groups": [
         {
           "id": "talents",

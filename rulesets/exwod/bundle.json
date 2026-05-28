@@ -824,6 +824,9 @@
     ],
     "abilities": {
       "label": "Charms",
+      "hideSpellFields": true,
+      "showCategoryScores": false,
+      "hideEmptyCategories": true,
       "groups": [
         {
           "id": "talents",

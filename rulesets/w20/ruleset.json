@@ -451,6 +451,9 @@
   ],
   "abilities": {
     "label": "Gifts & Rites",
+    "hideSpellFields": true,
+    "showCategoryScores": false,
+    "hideEmptyCategories": true,
     "groups": [
       { "id": "talents",    "label": "Talents",    "members": ["Alertness", "Athletics", "Brawl", "Empathy", "Expression", "Intimidation", "Leadership", "Primal-Urge", "Streetwise", "Subterfuge"] },
       { "id": "skills",     "label": "Skills",     "members": ["Animal Ken", "Crafts", "Drive", "Etiquette", "Firearms", "Larceny", "Melee", "Performance", "Stealth", "Survival"] },

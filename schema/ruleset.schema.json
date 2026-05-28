@@ -1172,6 +1172,26 @@
               }
             }
           }
+        },
+        "hideSpellFields": {
+          "type": "boolean",
+          "default": false,
+          "description": "Phase 7 — when true, the charm/ability dialog hides the D&D-shaped Effect, Damage, and Half-on-save fields. WoD-pattern rulesets (vtmv20, exwod, w20) set this to true because those fields are noise in systems where Charm/Gift mechanics live in the description instead. Default false preserves the legacy form for D&D 5e and similar."
+        },
+        "showCategoryScores": {
+          "type": "boolean",
+          "default": true,
+          "description": "Phase 7 — when false, the per-category 0-10 score input is hidden from the abilities/charms flyout. Use this for rulesets where Charms/Gifts/Stunts are individual powers and NOT a rated power-line (exalted3e, exwod, w20). Default true preserves the score input for V20 Disciplines (Animalism 3, Auspex 4, etc.) where the category rating IS a meaningful stat."
+        },
+        "hideEmptyCategories": {
+          "type": "boolean",
+          "default": false,
+          "description": "Phase 7 — when true, categories with zero abilities are hidden from the charm/ability flyout. Re-shown automatically when the player adds the first ability into them. Use to declutter rulesets with many narrow Charm buckets (exwod, w20 Gifts)."
+        },
+        "types": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "description": "Phase 7 — optional override for the Type dropdown in the charm/ability dialog. When set, this list replaces the default. The default (v0.4+) is [passive, triggered, at-will, per-rest, reflexive, action, ritual]."
         }
       }
     },
