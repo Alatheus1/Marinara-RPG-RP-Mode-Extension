@@ -1463,6 +1463,30 @@
 .mrrp-spellbook__sync-msg--warn { color: var(--mrrp-warn); }
 .mrrp-spellbook__sync-msg--err  { color: var(--mrrp-fail); }
 
+/* Phase 7 — trait rows (Backgrounds, Merits, Flaws) now show name as a
+   clickable span (opens the edit dialog) with the description as a
+   hover tooltip. Static type chip for merits/flaws sits between name
+   and points. */
+.mrrp-trait-row__name {
+  cursor: pointer;
+  flex: 1 1 auto;
+  min-width: 0;
+  text-overflow: ellipsis;
+  overflow: hidden;
+  white-space: nowrap;
+}
+.mrrp-trait-row__name:hover { color: var(--mrrp-accent); }
+.mrrp-trait-row__type {
+  font-size: 10px;
+  font-family: var(--mrrp-mono);
+  color: var(--mrrp-text-dim);
+  border: 1px solid var(--mrrp-hairline);
+  border-radius: var(--mrrp-radius-sm);
+  padding: 1px 5px;
+  background: var(--mrrp-bg-elev);
+  white-space: nowrap;
+}
+
 .mrrp-spellbook-ab__name { font-weight: 500; font-size: 12px; }
 .mrrp-spellbook-ab__cost {
   font-family: var(--mrrp-mono);
