@@ -10566,36 +10566,61 @@ function invalidateSpellbookLorebookCache() {
   if (state.chatId) lsDel(LS_SPELLBOOK_LB_PFX + state.chatId);
 }
 
+/* Phase 7 — singularise an abilities.label for use as the per-entry
+   "kind" tag in lorebook headers. "Charms" → "Charm", "Disciplines" →
+   "Discipline", "Gifts & Rites" → kept as-is (multi-word, ambiguous to
+   singularise). */
+function _singularKind(lbl) {
+  if (!lbl) return "Ability";
+  if (lbl.indexOf(" ") !== -1) return lbl;
+  if (lbl.length > 1 && lbl.charAt(lbl.length - 1).toLowerCase() === "s") return lbl.slice(0, -1);
+  return lbl;
+}
+
+/* Phase 7 — build the standard "[Kind] Name — metadata" header line
+   every sheet-entry lorebook content starts with. The AI sees this as
+   the first thing in context when the keyword fires, so the kind is
+   unambiguous and the name is the source of truth (not a parenthetical
+   afterthought). metadata is optional; pass empty string to omit. */
+function _entryHead(kind, name, metadata) {
+  var head = "[" + kind + "] " + (name || "Untitled");
+  if (metadata) head += " — " + metadata;
+  return head;
+}
+
 function abilityEntryBody(ability, charId, catId) {
   var keyword = (ability.lorebookKeyword || ability.name || "").trim();
-  var content = (ability.description || "").trim();
   var isSorcery = (catId === "sorcery");
-  /* Sorcery flag goes FIRST. The state-mutator agent reads "Type: Sorcery"
-     to choose the Shape Sorcery workflow (sorcerous-mote accumulation,
-     up-front Willpower with refund-on-success) instead of the standard
-     Charm cost flow that taps Personal/Peripheral pools. */
-  if (isSorcery) {
-    content = "Type: Sorcery" + (content ? "\n\n" + content : "");
+  /* Phase 7 — header line first. Kind comes from the ruleset's
+     abilities.label (singularised when sensible); category label, when
+     known, rides along as metadata so e.g. "[Charm] Mind-Hand
+     Manipulation — Caste/Aspect Charms (Sorcery)" is unambiguous. */
+  var kindLbl = isSorcery ? "Sorcery" : _singularKind(state.ruleset && state.ruleset.abilities && state.ruleset.abilities.label);
+  var metaParts = [];
+  if (catId) {
+    var cfg = state.ruleset && state.ruleset.abilities;
+    var catLabel = "";
+    if (cfg && Array.isArray(cfg.categories)) {
+      for (var i = 0; i < cfg.categories.length; i++) {
+        if (cfg.categories[i] && cfg.categories[i].id === catId) { catLabel = cfg.categories[i].label; break; }
+      }
+    }
+    if (catLabel && catLabel.toLowerCase() !== kindLbl.toLowerCase()) metaParts.push(catLabel);
   }
-  /* Cost goes early in the entry content so the agent sees it
-     immediately. The state-mutator agent reads "Cost: ..." from the
-     active lorebook context on cast and emits one [mrrp-state: ...] tag
-     per numeric component. */
+  if (ability.type) metaParts.push(ability.type);
+  var content = _entryHead(kindLbl, ability.name || keyword, metaParts.join(" • "));
+  var desc = (ability.description || "").trim();
+  if (desc) content += "\n\n" + desc;
+  /* Cost line — the state-mutator agent reads "Cost: ..." on cast and
+     emits one [mrrp-state: ...] tag per numeric component. */
   var costText = (ability.costText || "").trim();
-  if (costText) {
-    content = (content ? content + "\n\n" : "") + "Cost: " + costText;
-  }
+  if (costText) content += "\n\nCost: " + costText;
   if (ability.effectText && content.indexOf(ability.effectText) === -1) {
-    content = (content ? content + "\n\n" : "") + "Effect: " + ability.effectText;
+    content += "\n\nEffect: " + ability.effectText;
   }
-  /* Cast-time mechanics block. The GM/state-mutator agents read this to
-     resolve saves: they see the damage dice, which save to call for,
-     whether half-on-save applies, and which attribute the caster's DC
-     keys off — without having to read the player's narration carefully.
-     Phase 7 — Cast skill / Save skill / Difficulty are included so the
-     GM agent can see the WoD-style (Attr + Skill) cast pool and the
-     target difficulty without inferring them. The Willpower-special
-     values render as readable labels for the agent. */
+  /* Cast-time mechanics block (Phase 7 additions: cast skill, save
+     skill, difficulty). Willpower-special attribute values render as
+     readable labels for the agent. */
   function _abilityAttrLabel(v) {
     if (!v) return "";
     if (v === "_willpower_current") return "Willpower (current)";
@@ -10610,12 +10635,10 @@ function abilityEntryBody(ability, charId, catId) {
   if (ability.saveSkill) castParts.push("Save vs (skill): " + ability.saveSkill);
   if (ability.difficulty) castParts.push("Difficulty: " + ability.difficulty);
   if (ability.halfOnSave) castParts.push("Half on save: yes (target takes half damage on a successful save)");
-  if (castParts.length) {
-    content = (content ? content + "\n\n" : "") + "Cast Mechanics:\n" + castParts.join("\n");
-  }
-  /* Build the keyword list. Sorcery entries also pick up the generic
-     "sorcery" keyword so a chat mention of "sorcery" pulls every spell
-     into context, helpful for NPC sorcerers and rules questions. */
+  if (castParts.length) content += "\n\nCast Mechanics:\n" + castParts.join("\n");
+  /* Keyword list — sorcery picks up the generic "sorcery" keyword so a
+     mention pulls every spell into context (helpful for NPC sorcerers
+     and rules questions). */
   var keys = keyword ? [keyword] : [];
   if (isSorcery && keys.indexOf("sorcery") === -1) keys.push("sorcery");
   return {
@@ -10638,11 +10661,9 @@ function abilityEntryBody(ability, charId, catId) {
 
 function bgEntryBody(bg, charId) {
   var keyword = (bg.lorebookKeyword || bg.name || "").trim();
-  var head = bg.name || keyword || "Background";
-  if (typeof bg.value === "number") {
-    head += " (Background — " + bg.value + " dot" + (bg.value === 1 ? "" : "s") + ")";
-  }
-  var content = head;
+  var meta = "";
+  if (typeof bg.value === "number") meta = bg.value + " dot" + (bg.value === 1 ? "" : "s");
+  var content = _entryHead("Background", bg.name || keyword, meta);
   if (bg.description) content += "\n\n" + bg.description.trim();
   if (bg.mechanical)  content += "\n\nMechanical:\n" + bg.mechanical.trim();
   return {
@@ -10663,8 +10684,8 @@ function mfEntryBody(mf, charId) {
   var typeRaw = mf.type || "physical";
   var typeLbl = typeRaw.charAt(0).toUpperCase() + typeRaw.slice(1);
   var pts = (typeof mf.points === "number") ? mf.points : 1;
-  var head = (mf.name || keyword || kindLbl) + " (" + kindLbl + " — " + typeLbl + " — " + pts + " pt" + (pts === 1 ? "" : "s") + ")";
-  var content = head;
+  var meta = typeLbl + ", " + pts + " pt" + (pts === 1 ? "" : "s");
+  var content = _entryHead(kindLbl, mf.name || keyword, meta);
   if (mf.description) content += "\n\n" + mf.description.trim();
   if (mf.mechanical)  content += "\n\nMechanical:\n" + mf.mechanical.trim();
   return {
@@ -10683,13 +10704,12 @@ function itemEntryBody(item, charId) {
   var keyword = (item.lorebookKeyword || item.name || "").trim();
   var meta = [];
   if (item.slot)            meta.push(item.slot);
-  if (item.category)        meta.push(item.category);
+  if (item.category && item.category !== "equipment") meta.push(item.category);
   if (item.damage)          meta.push("damage " + item.damage);
   if (item.hardness)        meta.push("hardness " + item.hardness);
   if (item.overwhelming)    meta.push("overwhelming " + item.overwhelming);
   if (item.moteCommitment)  meta.push(item.moteCommitment + " motes from " + (item.motePool || "Personal"));
-  var head = (item.name || keyword || "Item") + (meta.length ? " (" + meta.join(" • ") + ")" : "");
-  var content = head;
+  var content = _entryHead("Item", item.name || keyword, meta.join(" • "));
   if (item.description) content += "\n\n" + item.description.trim();
   if (item.mechanical)  content += "\n\nMechanical:\n" + item.mechanical.trim();
   if (Array.isArray(item.bonuses) && item.bonuses.length) {
