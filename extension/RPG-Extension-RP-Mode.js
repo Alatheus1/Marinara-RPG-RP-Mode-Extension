@@ -1667,6 +1667,13 @@ function normalizeInventoryItem(it, idx) {
   if (typeof it.useEffect !== "string") it.useEffect = "";
   if (typeof it.consumable !== "boolean") it.consumable = false;
   if (typeof it.notes !== "string") it.notes = "";
+  /* Phase 7 — description / mechanical / lorebook tracking fields for
+     the chat Character Reference lorebook. Default to "" when absent
+     so the dialog inputs and lorebook upsert read consistent shapes. */
+  if (typeof it.description !== "string") it.description = "";
+  if (typeof it.mechanical !== "string") it.mechanical = "";
+  if (typeof it.lorebookKeyword !== "string") it.lorebookKeyword = "";
+  if (typeof it.lorebookEntryId !== "string") it.lorebookEntryId = "";
   /* Hardness / Overwhelming default to 0 (= "not applicable / hidden in UI").
      Coerce numeric strings ("3") to numbers; reject NaN, infinity, and
      negative values. Both are integers — fractional Hardness/Overwhelming
@@ -1835,16 +1842,24 @@ function mergeSheet(base, override) {
         });
     });
   }
-  /* Backgrounds are user-authored at runtime — name + dot value, free-text.
-     Old saves predating this field default to []; entries with non-string
-     names or non-finite values are dropped. */
+  /* Backgrounds are user-authored at runtime — name + dot value plus
+     Phase 7 description / mechanical / lorebook tracking fields.
+     Old saves predating this field default to []; entries with non-
+     string names or non-finite values are dropped. */
   if (Array.isArray(override.backgrounds)) {
     base.backgrounds = override.backgrounds
       .filter(function (b) { return b && typeof b === "object" && typeof b.name === "string"; })
       .map(function (b) {
         return {
           name: b.name,
-          value: (typeof b.value === "number" && isFinite(b.value)) ? b.value : 0
+          value: (typeof b.value === "number" && isFinite(b.value)) ? b.value : 0,
+          /* Phase 7 — preserve dialog fields across reloads. Strings
+             coerced to "" when absent so the dialog inputs and the
+             lorebook upsert read consistent shapes. */
+          description: typeof b.description === "string" ? b.description : "",
+          mechanical: typeof b.mechanical === "string" ? b.mechanical : "",
+          lorebookKeyword: typeof b.lorebookKeyword === "string" ? b.lorebookKeyword : "",
+          lorebookEntryId: typeof b.lorebookEntryId === "string" ? b.lorebookEntryId : ""
         };
       });
   }
@@ -2058,7 +2073,8 @@ function mergeSheet(base, override) {
     base.density = override.density;
   }
   /* Merits & Flaws (V20-anchored, available to any ruleset that declares
-     the meritsFlaws section). Array of { id, kind, name, type, points }.
+     the meritsFlaws section). Array of { id, kind, name, type, points }
+     plus Phase 7 description / mechanical / lorebook tracking fields.
      Drops malformed entries; clamps points to 1-7 (V20 canon range). */
   if (Array.isArray(override.meritsFlaws)) {
     base.meritsFlaws = override.meritsFlaws
@@ -2072,7 +2088,12 @@ function mergeSheet(base, override) {
           kind: (e.kind === "flaw") ? "flaw" : "merit",
           name: e.name,
           type: (typeof e.type === "string" && ["physical","mental","social","supernatural"].indexOf(e.type) !== -1) ? e.type : "physical",
-          points: pts
+          points: pts,
+          /* Phase 7 — preserve dialog fields across reloads. */
+          description: typeof e.description === "string" ? e.description : "",
+          mechanical: typeof e.mechanical === "string" ? e.mechanical : "",
+          lorebookKeyword: typeof e.lorebookKeyword === "string" ? e.lorebookKeyword : "",
+          lorebookEntryId: typeof e.lorebookEntryId === "string" ? e.lorebookEntryId : ""
         };
       });
   }
