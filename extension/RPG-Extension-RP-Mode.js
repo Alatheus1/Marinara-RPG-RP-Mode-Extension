@@ -10642,7 +10642,7 @@ function abilityEntryBody(ability, charId, catId) {
   var keys = keyword ? [keyword] : [];
   if (isSorcery && keys.indexOf("sorcery") === -1) keys.push("sorcery");
   return {
-    name: ability.name || keyword || "Untitled",
+    name: "[" + kindLbl + "] " + (ability.name || keyword || "Untitled"),
     content: content,
     keys: keys,
     position: 0,
@@ -10663,11 +10663,16 @@ function bgEntryBody(bg, charId) {
   var keyword = (bg.lorebookKeyword || bg.name || "").trim();
   var meta = "";
   if (typeof bg.value === "number") meta = bg.value + " dot" + (bg.value === 1 ? "" : "s");
-  var content = _entryHead("Background", bg.name || keyword, meta);
+  var head = _entryHead("Background", bg.name || keyword, meta);
+  var content = head;
   if (bg.description) content += "\n\n" + bg.description.trim();
   if (bg.mechanical)  content += "\n\nMechanical:\n" + bg.mechanical.trim();
   return {
-    name: bg.name || keyword || "Background",
+    /* Phase 7 — body.name uses the same "[Kind] Name" prefix as the
+       content header. Dedup matches on this exact name, so prefixing
+       keeps a Background "Resources" from colliding with a Charm
+       "Resources" in the same chat lorebook. */
+    name: "[Background] " + (bg.name || keyword || "Untitled"),
     content: content,
     keys: keyword ? [keyword] : [],
     position: 0,
@@ -10689,7 +10694,7 @@ function mfEntryBody(mf, charId) {
   if (mf.description) content += "\n\n" + mf.description.trim();
   if (mf.mechanical)  content += "\n\nMechanical:\n" + mf.mechanical.trim();
   return {
-    name: mf.name || keyword || kindLbl,
+    name: "[" + kindLbl + "] " + (mf.name || keyword || "Untitled"),
     content: content,
     keys: keyword ? [keyword] : [],
     position: 0,
@@ -10723,7 +10728,7 @@ function itemEntryBody(item, charId) {
   }
   if (item.useEffect) content += "\n\nUse effect: " + item.useEffect;
   return {
-    name: item.name || keyword || "Item",
+    name: "[Item] " + (item.name || keyword || "Untitled"),
     content: content,
     keys: keyword ? [keyword] : [],
     position: 0,
@@ -10734,50 +10739,113 @@ function itemEntryBody(item, charId) {
   };
 }
 
-/* Phase 7 — generic sheet-entry upsert. Dispatches to the right body
-   builder by `kind` and runs the same POST/PATCH-with-404-fallback
-   sequence as upsertAbilityLorebookEntry. The ability path still calls
-   upsertAbilityLorebookEntry (which delegates here) so the existing
-   charm flow is byte-equivalent. */
+/* Phase 7 — body-builder dispatcher. Split out from upsertSheetEntry-
+   Lorebook so the same body can be built for matching/diffing without
+   re-running the API flow. */
+function sheetEntryLorebookBody(kind, entry, charId, extraCtx) {
+  if      (kind === "ability")    return abilityEntryBody(entry, charId, extraCtx && extraCtx.catId);
+  else if (kind === "background") return bgEntryBody(entry, charId);
+  else if (kind === "merit" || kind === "flaw") return mfEntryBody(entry, charId);
+  else if (kind === "item")       return itemEntryBody(entry, charId);
+  return null;
+}
+
+/* Phase 7 (revised) — generic sheet-entry upsert with fetch+match+
+   dedupe. Replaces the PATCH-by-id-with-404-fallback flow that turned
+   out to be unreliable:
+   - Marinara's lorebook PATCH against a stale entry id doesn't always
+     return 404 — sometimes the engine returns 200 (silent no-op) or
+     some other non-404 error code, defeating the catch-and-POST
+     fallback path. Charms then "vanish" (PATCH silently succeeds, the
+     entry never gets created on the server).
+   - When the user deletes entries via the lorebook UI and re-syncs,
+     the sheet still holds stale lorebookEntryIds. The POST-after-404
+     fallback DID fire for traits added via the new dialog, but multi-
+     ple re-sync clicks (or any concurrent dialog-save + re-sync race)
+     piled on extra entries because there was no global dedup step.
+
+   New flow, modelled on syncFieldReferenceToLorebook (line ~12745):
+   1. GET /lorebooks/:id/entries — single read per upsert.
+   2. Match in-memory by entry.name (the "[Kind] Name" string from the
+      body builder). Lorebook entries don't expose tags in their list
+      response, so name is the safest matching key.
+   3. If lorebookEntryId is stored AND points at an entry whose name
+      matches body.name, prefer that entry as the primary candidate
+      (handles two same-name entries by stable id).
+   4. Dedup: keep one primary, queue every other same-name entry for
+      deletion via apiDeleteRaw (and the stale-id entry too if its
+      name doesn't match the current body — handles rename).
+   5. PATCH primary or POST new. If PATCH fails, fall back to POST so
+      a single bad id doesn't hang the upsert. */
 function upsertSheetEntryLorebook(kind, entry, charId, extraCtx) {
   if (!entry) return Promise.resolve(null);
   var keyword = (entry.lorebookKeyword || entry.name || "").trim();
   if (!keyword) return Promise.resolve(null);
+  var body = sheetEntryLorebookBody(kind, entry, charId, extraCtx);
+  if (!body) return Promise.resolve(null);
   return findOrCreateSpellbookLorebook().then(function (lbId) {
-    var body;
-    if      (kind === "ability")    body = abilityEntryBody(entry, charId, extraCtx && extraCtx.catId);
-    else if (kind === "background") body = bgEntryBody(entry, charId);
-    else if (kind === "merit" || kind === "flaw") body = mfEntryBody(entry, charId);
-    else if (kind === "item")       body = itemEntryBody(entry, charId);
-    else return null;
-    if (entry.lorebookEntryId) {
-      return apiFetch("/lorebooks/" + lbId + "/entries/" + entry.lorebookEntryId, {
-        method: "PATCH",
-        body: JSON.stringify(body)
-      }).then(function () { return entry.lorebookEntryId; }).catch(function (e) {
-        if (e && e.status === 404) {
-          return apiFetch("/lorebooks/" + lbId + "/entries", {
-            method: "POST",
-            body: JSON.stringify(body)
-          }).then(function (resp) { return resp && resp.id; });
-        }
-        throw e;
+    return apiFetch("/lorebooks/" + lbId + "/entries").then(function (allEntries) {
+      var entries = Array.isArray(allEntries) ? allEntries : [];
+      /* Match candidates: same-name entries (new "[Kind] Name" format)
+         AND legacy bare-name entries (pre-Phase-7 entries with names
+         like "Mind-Hand Manipulation" without the [Kind] prefix —
+         these migrate by being PATCHed with the new body, which
+         updates their name to the prefixed format). */
+      var bareName = (entry.name || keyword).trim();
+      var sameName = entries.filter(function (e) {
+        return e && (e.name === body.name || (bareName && e.name === bareName));
       });
-    }
-    return apiFetch("/lorebooks/" + lbId + "/entries", {
-      method: "POST",
-      body: JSON.stringify(body)
-    }).then(function (resp) { return resp && resp.id; }).catch(function (e) {
-      if (e && e.status === 404) {
-        invalidateSpellbookLorebookCache();
-        return findOrCreateSpellbookLorebook().then(function (newLbId) {
-          return apiFetch("/lorebooks/" + newLbId + "/entries", {
-            method: "POST",
-            body: JSON.stringify(body)
-          }).then(function (resp) { return resp && resp.id; });
-        });
+      var byId = entry.lorebookEntryId
+        ? entries.find(function (e) { return e && e.id === entry.lorebookEntryId; })
+        : null;
+      var primary = null;
+      if (byId && (byId.name === body.name || byId.name === bareName)) {
+        primary = byId;
+      } else if (sameName.length) {
+        primary = sameName[0];
       }
-      throw e;
+      /* Anything matching by name that ISN'T the primary is a duplicate
+         to delete. Also delete a stale byId entry whose name no longer
+         matches (renamed away from this entry). */
+      var dupes = sameName.filter(function (e) { return e !== primary; });
+      if (byId && byId !== primary && byId.name !== body.name && byId.name !== bareName) {
+        dupes.push(byId);
+      }
+      var cleanupChain = Promise.resolve();
+      dupes.forEach(function (dup) {
+        cleanupChain = cleanupChain.then(function () {
+          return apiDeleteRaw("/lorebooks/" + lbId + "/entries/" + dup.id).catch(function () {});
+        });
+      });
+      return cleanupChain.then(function () {
+        if (primary) {
+          return apiFetch("/lorebooks/" + lbId + "/entries/" + primary.id, {
+            method: "PATCH",
+            body: JSON.stringify(body)
+          }).then(function () { return primary.id; }).catch(function (e) {
+            log("PATCH failed for " + body.name + " (id " + primary.id + "), falling back to POST: " + (e && e.message));
+            return apiFetch("/lorebooks/" + lbId + "/entries", {
+              method: "POST",
+              body: JSON.stringify(body)
+            }).then(function (resp) { return resp && resp.id; });
+          });
+        }
+        return apiFetch("/lorebooks/" + lbId + "/entries", {
+          method: "POST",
+          body: JSON.stringify(body)
+        }).then(function (resp) { return resp && resp.id; }).catch(function (e) {
+          if (e && e.status === 404) {
+            invalidateSpellbookLorebookCache();
+            return findOrCreateSpellbookLorebook().then(function (newLbId) {
+              return apiFetch("/lorebooks/" + newLbId + "/entries", {
+                method: "POST",
+                body: JSON.stringify(body)
+              }).then(function (resp) { return resp && resp.id; });
+            });
+          }
+          throw e;
+        });
+      });
     });
   });
 }
