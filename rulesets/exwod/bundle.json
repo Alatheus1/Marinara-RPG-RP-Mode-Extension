@@ -1235,47 +1235,6 @@
         "position": 0
       },
       {
-        "name": "Adding Charms to your sheet",
-        "keys": [
-          "charm",
-          "charms"
-        ],
-        "secondaryKeys": [
-          "add",
-          "adding",
-          "how to add",
-          "create new",
-          "+ add",
-          "buy a charm",
-          "build",
-          "configure"
-        ],
-        "selective": true,
-        "content": "**Adding Charms to your sheet (player guide).** ExvWoD ships no Charm catalogue (hundreds across nine Exalt types); you add the Charms you intend to use yourself.\n- Open the CHARMS flyout. Buckets: Caste/Aspect, Favoured/Key, Other, Shapeshifting (Lunar), Anima/Caste Power, Ancient Sorcery. Use '+ Add Charms' to create your own bucket if you prefer per-Ability or per-Caste organisation.\n- The small 0-10 box on each bucket header is a generic per-line rating the framework attaches in dice-pool systems (it's the Discipline rating in Vampire). ExvWoD Charms are individual powers, not a rated line — leave it at 0.\n- Inside a bucket → '+ Add': Name, optional rating dots, cost in the Cast-parser syntax ('5m, 1wp' for motes/Willpower), description, mechanical text.\n- Cast button deducts cost from the Motes pool (and Willpower) and injects a cast tag.\n- Committed-mote artifacts: add via Inventory with mote_commitment=N, mote_pool='Personal' (single ExvWoD pool). Equipping locks the motes; unequipping releases them.\n- Health-level Charms (Ox-Body Technique, Flesh-aspect levels, Mutations): use the Health Track widget's 'Add level' buttons (-0/-1/-2). For rarer Crippled (-5) grants, add a -2 cell and note the true -5 in character notes.",
-        "constant": false,
-        "position": 0
-      },
-      {
-        "name": "Optional Sub-Agents — what they do and how to enable",
-        "keys": [
-          "sub-agent",
-          "sub agent"
-        ],
-        "secondaryKeys": [
-          "enable",
-          "disable",
-          "agents",
-          "configuration",
-          "settings",
-          "turn on",
-          "turn off"
-        ],
-        "selective": true,
-        "content": "**Optional Sub-Agents (player guide).** Beyond the main Ruleset Helper, the bundle ships five focused pre-generation sub-agents, all DISABLED by default. Enable any in Marinara → Settings → Agents (each costs one extra model call per turn).\n- **state-reminder**: terse current-state HUD each turn (motes, Willpower, health, anima, Intimacies)\n- **state-mutator**: tells the narrator when to emit [mrrp-state: ...] sheet-change tags\n- **combat-adjudicator**: wakes only in combat; enforces initiative, pools, soak, Charm costs\n- **lore-query**: answers explicit out-of-character rules questions from the lorebook\n- **npc-bookkeeper**: tracks active and recent NPCs (pools, health, anima, attitude) for continuity\nIf you want the floating sheet to stay in sync, enable state-reminder + state-mutator first. Add the others for crunchier play.",
-        "constant": false,
-        "position": 0
-      },
-      {
         "name": "Exalt Type: Solar",
         "keys": [
           "solar",

@@ -1614,48 +1614,6 @@
         "position": 0
       },
       {
-        "name": "Adding Gifts and Rites to your sheet",
-        "keys": [
-          "gift",
-          "gifts",
-          "rite",
-          "rites"
-        ],
-        "secondaryKeys": [
-          "add",
-          "adding",
-          "how to add",
-          "create new",
-          "+ add",
-          "build",
-          "configure"
-        ],
-        "selective": true,
-        "content": "**Adding Gifts and Rites to your sheet (player guide).** W20 ships no Gift catalogue (hundreds across breeds / auspices / tribes / totems).\n- Open the GIFTS & RITES flyout. Buckets: Breed · Auspice · Tribal · General · Spirit (Lv 6+) · Rites. Use '+ Add Gifts & Rites' to create your own bucket.\n- The small 0-10 box on each bucket header is a generic per-line rating (the Discipline rating in Vampire). W20 Gifts are individual powers — leave it at 0.\n- Inside a bucket → '+ Add': Name, Level dots (1–6, must have Rank ≥ Gift level), and use the notes for cost ('1 Gnosis', '1 Rage + 1 Willpower'), Teaching spirit, and System (which roll, difficulty, effect).\n- Rites go in the Rites bucket. Record the required Rituals Knowledge level and any chiminage / time / materials.\n- When you activate a Gift in narration, the state-mutator agent emits [mrrp-state: field=\"Gnosis\" delta=\"-1\"] (or Rage / Willpower) so the pool deducts correctly.",
-        "constant": false,
-        "position": 0
-      },
-      {
-        "name": "Optional Sub-Agents — what they do and how to enable",
-        "keys": [
-          "sub-agent",
-          "sub agent"
-        ],
-        "secondaryKeys": [
-          "enable",
-          "disable",
-          "agents",
-          "configuration",
-          "settings",
-          "turn on",
-          "turn off"
-        ],
-        "selective": true,
-        "content": "**Optional Sub-Agents (player guide).** Beyond the main Ruleset Helper, the bundle ships five focused pre-generation sub-agents, all DISABLED by default. Enable any in Marinara → Settings → Agents (each costs one extra model call per turn).\n- **state-reminder**: terse current-state HUD each turn (form, Rage, Gnosis, Willpower, health, Renown, Frenzy)\n- **state-mutator**: tells the narrator when to emit [mrrp-state: ...] sheet-change tags\n- **combat-adjudicator**: wakes only in combat; enforces initiative, attack/soak pools, Rage extra actions, frenzy\n- **lore-query**: answers explicit out-of-character rules questions from this lorebook\n- **npc-bookkeeper**: tracks active and recent NPCs (Rage/Gnosis/Willpower, health, form, attitude) for continuity\nIf you want the floating sheet to stay in sync, enable state-reminder + state-mutator first.",
-        "constant": false,
-        "position": 0
-      },
-      {
         "name": "Attribute: Strength (STR)",
         "keys": [
           "Strength",

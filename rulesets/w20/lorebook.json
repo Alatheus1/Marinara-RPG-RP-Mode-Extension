@@ -321,26 +321,6 @@
       "content": "**Rule: Character creation (W20).**\n- **Concept**: Breed (Homid/Metis/Lupus), Auspice (5), Tribe (13).\n- **Nature & Demeanour**: two Archetypes (Willpower-recovery condition + roleplay).\n- **Attributes**: 7/5/3 priority across Physical / Social / Mental. All start at 1.\n- **Abilities**: 13/9/5 priority across Talents/Skills/Knowledges. Lupus restrictions on Academics/Computer/Enigmas/Law/Technology (no dots at creation without justification).\n- **Backgrounds**: 5 dots. Tribal restrictions apply.\n- **Gifts**: one Level 1 each from Breed, Auspice, and Tribe lists.\n- **Pools at creation**:\n  - **Rage** by Auspice: Ragabash 1 · Theurge 2 · Philodox 3 · Galliard 4 · Ahroun 5\n  - **Gnosis** by Breed: Homid 1 · Metis 3 · Lupus 5\n  - **Willpower** by Tribe: 3 default · 4 for Bone Gnawers · Children of Gaia · Stargazers · Wendigo\n- **Starting Renown** (3 permanent dots by Auspice, all at Rank 1 Cliath):\n  - Ragabash: 3 in any category\n  - Theurge: 3 Wisdom\n  - Philodox: 3 Honour\n  - Galliard: 2 Glory + 1 Wisdom\n  - Ahroun: 2 Glory + 1 Honour\n- **Freebie Points**: 15 base. Spend on Attributes (5/dot) · Abilities (2/dot) · Backgrounds (1/dot) · Gifts Lv1 (7/each) · Gnosis (2/dot) · Rage (1/dot) · Willpower (1/dot) · Renown (2/dot).\n- **Merits/Flaws**: up to 7 points each. Flaws return up to 7 freebie points.\n- **Specialties**: any Attribute/Ability 4+ may take a specialty (10s = 2 successes).\n- **Pack creation**: coordinate concept, totem, territory, alpha, sept, allies/enemies with other players.",
       "constant": false,
       "position": 0
-    },
-    {
-      "id": "w20-guide-add-gifts",
-      "name": "Adding Gifts and Rites to your sheet",
-      "keys": ["gift", "gifts", "rite", "rites"],
-      "secondaryKeys": ["add", "adding", "how to add", "create new", "+ add", "build", "configure"],
-      "selective": true,
-      "content": "**Adding Gifts and Rites to your sheet (player guide).** W20 ships no Gift catalogue (hundreds across breeds / auspices / tribes / totems).\n- Open the GIFTS & RITES flyout. Buckets: Breed · Auspice · Tribal · General · Spirit (Lv 6+) · Rites. Use '+ Add Gifts & Rites' to create your own bucket.\n- The small 0-10 box on each bucket header is a generic per-line rating (the Discipline rating in Vampire). W20 Gifts are individual powers — leave it at 0.\n- Inside a bucket → '+ Add': Name, Level dots (1–6, must have Rank ≥ Gift level), and use the notes for cost ('1 Gnosis', '1 Rage + 1 Willpower'), Teaching spirit, and System (which roll, difficulty, effect).\n- Rites go in the Rites bucket. Record the required Rituals Knowledge level and any chiminage / time / materials.\n- When you activate a Gift in narration, the state-mutator agent emits [mrrp-state: field=\"Gnosis\" delta=\"-1\"] (or Rage / Willpower) so the pool deducts correctly.",
-      "constant": false,
-      "position": 0
-    },
-    {
-      "id": "w20-guide-subagents",
-      "name": "Optional Sub-Agents — what they do and how to enable",
-      "keys": ["sub-agent", "sub agent"],
-      "secondaryKeys": ["enable", "disable", "agents", "configuration", "settings", "turn on", "turn off"],
-      "selective": true,
-      "content": "**Optional Sub-Agents (player guide).** Beyond the main Ruleset Helper, the bundle ships five focused pre-generation sub-agents, all DISABLED by default. Enable any in Marinara → Settings → Agents (each costs one extra model call per turn).\n- **state-reminder**: terse current-state HUD each turn (form, Rage, Gnosis, Willpower, health, Renown, Frenzy)\n- **state-mutator**: tells the narrator when to emit [mrrp-state: ...] sheet-change tags\n- **combat-adjudicator**: wakes only in combat; enforces initiative, attack/soak pools, Rage extra actions, frenzy\n- **lore-query**: answers explicit out-of-character rules questions from this lorebook\n- **npc-bookkeeper**: tracks active and recent NPCs (Rage/Gnosis/Willpower, health, form, attitude) for continuity\nIf you want the floating sheet to stay in sync, enable state-reminder + state-mutator first.",
-      "constant": false,
-      "position": 0
     }
   ]
 }
