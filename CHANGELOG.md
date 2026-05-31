@@ -9,6 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 Pending the next published release.
 
+### Fixed — character-bundle export/import round-trip (2026-05-31)
+
+- `collectBundle()` and `applyBundle()` in `extension/RPG-Extension-RP-Mode.js` were still reading/writing the **legacy chat-scoped** sheet localStorage key (`sheetKey(chatId, charId)`), missed by the v0.2.1 migration that moved authoritative sheet storage to the chat-independent `characterKey(charId)`. Symptom: exported bundles silently shipped with `sheets: {}` for every character (only `characters`/`activeCharacterId` metadata exported), and re-imports appeared to succeed but loaded blank sheets — the buttons in the sheet header were effectively broken since v0.2.1.
+- Fix: read from `characterKey(c.id)` first (with a legacy `sheetKey` fallback for any character whose data has never been touched since v0.2.1, so unmigrated entries still export), and write the imported sheets back to `characterKey(c.id)` so `loadSheet` actually finds them. Wipe path also covers both keys symmetrically so legacy data doesn't resurface via the auto-migration fallback after an import.
+- No schema change — the exported JSON shape (`mrrp-character-bundle` v1) is unchanged.
+
 ### Added — Werewolf: The Apocalypse 20th Anniversary reference ruleset (2026-05-23)
 
 - `rulesets/w20/` — *Werewolf: The Apocalypse 20th Anniversary Edition* (W20, 2013 Onyx Path). Ships `ruleset.json` + `gm-agent.md` + `lorebook.json` (29 hand-authored entries: mechanics rules + per-Tribe / per-Auspice / per-Breed overviews + Triat / Litany lore + Adding-Gifts guidance) + five per-ruleset sub-agent overrides + `INSTALL.md`. Built `bundle.json` and `agents.json` included. Opts into `scenarioDefaultDerive`.
