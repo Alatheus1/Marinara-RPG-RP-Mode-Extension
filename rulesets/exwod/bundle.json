@@ -910,7 +910,7 @@
     "description": "Keyword-triggered reference for Exalted Versus World of Darkness (Revised): modified V20 dice mechanics, Essence/mote economy, Charms, anima, Intimacies, and per-Exalt-type overviews. Original mechanics references only; Exalted and World of Darkness names belong to Onyx Path Publishing and Paradox Interactive AB. Unofficial fan material.",
     "category": "world",
     "scanDepth": 4,
-    "tokenBudget": 2500,
+    "tokenBudget": 5000,
     "recursiveScanning": false,
     "entries": [
       {
@@ -943,7 +943,7 @@
         ],
         "content": "Each 1 rolled normally subtracts one success from the total. EXCEPTION: when the roll uses a Caste Ability (Solars, Abyssals, Sidereals), an Aspect Ability (Dragon-Blooded), or a Key Ability (Infernals) — or, for Lunars/Alchemicals/Liminals, the relevant Caste/Aspect Attribute — 1s do NOT subtract successes. They can still contribute to a botch only if the roll has zero successes overall. This is the signature ExvWoD reliability of an Exalt acting within her sphere of mastery.",
         "selective": false,
-        "constant": true,
+        "constant": false,
         "position": 0
       },
       {
@@ -993,7 +993,7 @@
         ],
         "content": "Willpower is rated 1-10; all Exalted begin play at 5. Spend 1 to resist mental/emotional compulsion, to power some Charms, or — crucially — to REFUSE to act against an Intimacy (Willpower vs difficulty 8; see Intimacies). Willpower also substitutes for any WoD trait an Exalt lacks (Rage, Self-Control, Gnosis, etc.) when a crossover power demands it. Temporary Willpower refreshes to the permanent rating after a full rest; regain 1 once per session for strongly affirming an Intimacy.",
         "selective": false,
-        "constant": true,
+        "constant": false,
         "position": 0
       },
       {
@@ -1011,7 +1011,7 @@
         ],
         "content": "Seven levels (V20 baseline): Bruised(-0), Hurt(-1), Injured(-1), Wounded(-2), Maimed(-2), Crippled(-5), Incapacitated. The penalty of the highest filled box applies to all dice pools. Damage is Bashing, Lethal, or Aggravated, tracked separately. Exalts heal fast — roughly 30 minutes per level (1 hour for Maimed/Crippled, 12 hours for Incapacitated aggravated) — and never scar or cripple permanently short of full amputation. Charms such as Ox-Body Technique, Lunar/Liminal Flesh-aspect levels, and Mutations permanently ADD health levels; the player adds these on the Health Track widget via its 'Add level' buttons (-0/-1/-2 and 'remove last'), not as a damage delta.",
         "selective": false,
-        "constant": true,
+        "constant": false,
         "position": 0
       },
       {
@@ -1026,7 +1026,7 @@
         ],
         "content": "Unlike most WoD creatures, Exalted soak BASHING, LETHAL, and AGGRAVATED with Stamina + armour dice at difficulty 6 (each soak success cancels one damage die; soak rolls cannot botch). Mortals cannot soak lethal or aggravated without armour, and never soak with Stamina against those. Optional 'Dangerous Aggravated' rule: aggravated soak is difficulty 8. Exalts may parry ranged attacks (even bullets) if capable. Cold iron and silver do not bypass Exalt defences; fire/sunlight only deal aggravated to types with a specific vulnerability (e.g. the Sun-Seared Flaw).",
         "selective": false,
-        "constant": true,
+        "constant": false,
         "position": 0
       },
       {
@@ -1056,7 +1056,7 @@
         ],
         "content": "ExvWoD uses ONE fungible mote pool (the Essence Pool; called Motes on the sheet so it is not confused with the Essence rating). Personal and Peripheral are not separated. Set the 'Mote Pool' stat in DERIVED POOLS to the value for your Exalt type and Essence rating (the Motes bar uses it as its cap). Solars/Abyssals/Infernals: E1=10, E2=12, E3=15, E4=17, E5=20 (spend/turn 1/2/3/4/5). Lunars/Sidereals/Alchemicals: E1=8, E2=10, E3=12, E4=14, E5=15 (spend/turn 1/2/3/3/4). Dragon-Blooded: E1=5, E2=6, E3=7, E4=8, E5=10 (spend/turn 1/1/2/2/3). Liminals: E1=6, E2=8, E3=10, E4=11, E5=12 (spend/turn 1/2/2/3/3). Essence rating is capped at 5; per-turn spend is limited by the table — Charms costing more than that take several turns to channel.",
         "selective": false,
-        "constant": true,
+        "constant": false,
         "position": 0
       },
       {
@@ -1085,7 +1085,7 @@
         ],
         "content": "Spending 3 or more motes in a single scene makes the anima banner visible. In the depleted World of Darkness it rises only a few feet, bright as a bonfire, in the Exalt's characteristic colour, and the Caste mark involuntarily blazes on the forehead. It fades (Essence rating x 3) minutes after she stops actively spending. The banner is an unmistakable tell that a great supernatural power is present (though only the wisest spirits recognise WHAT). Dragon-Blooded have no Caste mark — they manifest Aspect markings and destructive elemental anima flux: when flaring, everything within ~1 yard takes 1 lethal/turn (2 for Fire Aspects). The Anima Control Merit grants control over flaring.",
         "selective": false,
-        "constant": true,
+        "constant": false,
         "position": 0
       },
       {
@@ -1100,7 +1100,7 @@
         ],
         "content": "Every Exalt has about three Intimacies: either a personal tie stated with its emotion ('My sister (love)', 'Prince Vitel (hatred)') or a statement of philosophy ('Power demands restraint'). When something tries to force the character to act against, abandon, or betray an Intimacy, the player may roll Willpower vs difficulty 8 to refuse — even as a SECOND line of defence after already failing to resist a compulsion power such as Dominate. Strongly affirming an Intimacy through action restores 1 Willpower, once per session. Intimacies replace WoD Humanity/Virtues; ExvWoD has no Frenzy and no blood/Hunger.",
         "selective": false,
-        "constant": true,
+        "constant": false,
         "position": 0
       },
       {
@@ -1115,7 +1115,7 @@
         ],
         "content": "ExvWoD's stunt rule is simple and is NOT a dice-bonus tier system (that is Exalted 3e, not ExvWoD). For an Exalt, doing something in a dramatic, stylish, or extravagant way carries NO mechanical penalty and does NOT raise the difficulty: 'kick a guy' and 'swing around a lamppost and kick a guy in the face with both feet' have the exact same difficulty. It grants no bonus dice — the reward is in the story, not the pool. The rule applies only to Exalted; mortals, vampires, werewolves, etc. remain subject to the standard Storyteller difficulty modifiers for ambitious actions. It applies to the action's difficulty, not its outcome — spectacle never makes success harder, but it does not guarantee success either.",
         "selective": false,
-        "constant": true,
+        "constant": false,
         "position": 0
       },
       {

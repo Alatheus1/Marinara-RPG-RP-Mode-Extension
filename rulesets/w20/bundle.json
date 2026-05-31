@@ -1073,7 +1073,7 @@
     "description": "Keyword-triggered reference for Werewolf: The Apocalypse 20th Anniversary Edition (W20, 2013 Onyx Path). Mechanics references only; tribe / auspice / Gift / Rite / totem names belong to Paradox Interactive AB. No verbatim corebook text reproduced. Distributed under the Dark Pack Agreement.",
     "category": "world",
     "scanDepth": 4,
-    "tokenBudget": 2500,
+    "tokenBudget": 5000,
     "recursiveScanning": false,
     "entries": [
       {
@@ -1116,7 +1116,7 @@
         ],
         "content": "Willpower has a permanent rating (1-10) and a temporary pool (cannot exceed permanent). Spend 1 for: an automatic success (cap once/turn, not on damage / Gift activations), ignore wound penalty on a single roll, abort a triggered frenzy, or resist instinctive urges (fleeing fire, attacking a Wyrm-creature). Regain 1 each morning on waking; more at story end, on personal victory, or for exceptional auspice duty.",
         "selective": false,
-        "constant": true,
+        "constant": false,
         "position": 0
       },
       {
@@ -1130,7 +1130,7 @@
         ],
         "content": "Rage is Gaia's fury — the Beast. Permanent rating set by Auspice (Ragabash 1, Theurge 2, Philodox 3, Galliard 4, Ahroun 5). Temporary pool spent during declaration. Uses: 1 Rage = 1 extra action (cap = half permanent Rage), 1 = instant form-shift no roll, 1 = ignore stun for a turn, Rage roll diff 8 when Incapacitated = 1 level healed per success (once/scene, leaves a Battle Scar). Regain: first moon sighting nightly (new 1 / waning 2 / half-or-waxing 3 / full 4); auspice moon = full Rage; humiliation, botches, moments before combat; new-story d10. FRENZY when a Rage roll scores 4+ successes; spend 1 Willpower to abort. THRALL OF THE WYRM at 6+ successes — unbreakable; breed-specific compulsion (Homid eats kills, Metis defiles, Lupus savages corpse). For each Rage above Willpower, -1 die on Social rolls (Beast Within). Both pools at 0 = stuck in breed form (Losing the Wolf).",
         "selective": false,
-        "constant": true,
+        "constant": false,
         "position": 0
       },
       {
@@ -1145,7 +1145,7 @@
         ],
         "content": "Gnosis is the spirit-world connection. Permanent rating set by Breed (Homid 1, Metis 3, Lupus 5). Temporary pool (cap = permanent) spent on Gifts, Mystic Rites, attuning fetishes, Stepping Sideways. STEP SIDEWAYS: see a reflective surface; roll Gnosis vs local Gauntlet (science lab 9, urban downtown 8, city street 7, rural 6, deep wild 5, urban caern 5, active caern 4, powerful caern 3, greatest caerns 2). Successes = speed (0 = fail; 1 = 5 min; 2 = 30 sec; 3+ instant); BOTCH = trapped in the Gauntlet until rescued. Each piece of silver carried subtracts 1 from effective Gnosis (1-day cooldown after discard). Cannot use Rage AND Gnosis in the same turn (a few Gifts excepted). Regain: meditation (Wits + Enigmas vs 8, 1 success/hour, once/day); Sacred Hunt with an Engling (full restore); spirit bargain; between-stories Cha + Enigmas roll. HARANO is high-Gnosis despair (especially Silver Fangs) — blurred reality, lethargy, possible inaction.",
         "selective": false,
-        "constant": true,
+        "constant": false,
         "position": 0
       },
       {
@@ -1161,7 +1161,7 @@
         ],
         "content": "Renown is standing in the Garou Nation. Three categories: GLORY (deeds of strength, bravery, victory — favoured by Galliards and Ahroun), HONOUR (duty, ethics, Litany — favoured by Ragabash and Philodox), WISDOM (thoughtful action, spirit insight, restraint — favoured by Theurges). Each is tracked as permanent dots (slow to change) and a temporary pool (no cap; accumulates between rites). Permanent gains require a Rite of Accomplishment (Cha + Rituals diff 6); permanent loss via a Punishment Rite. Starting Renown is 3 dots by Auspice: Ragabash 3-any; Theurge 3 Wisdom; Philodox 3 Honour; Galliard 2 Glory + 1 Wisdom; Ahroun 2 Glory + 1 Honour. All new characters begin at Rank 1.",
         "selective": false,
-        "constant": true,
+        "constant": false,
         "position": 0
       },
       {
@@ -1197,7 +1197,7 @@
         ],
         "content": "Five forms. Modifiers stack on the Homid baseline (Metis/Lupus apply them to their own breed-form base). HOMID — no mods, full speech, full human capability. GLABRO — STR +2, STA +2, MAN -2, APP -1 (humans); guttural speech, lethal teeth (Str-1). CRINOS — STR +4, DEX +1, STA +3, MAN -3, APP 0 to humans (Delirium); fangs and claws AGGRAVATED; cannot speak human languages; default for Metis-breed. HISPO — STR +3, DEX +2, STA +3, MAN -3, PER difficulty -1; extra bite die; claws aggravated; cannot use human tools. LUPUS — STR +1, DEX +2, STA +2, MAN -3, PER difficulty -2; 2x speed; claws lethal only (aggravated only for Lupus-breed); default for Lupus-breed; cannot speak or use tools. SHIFT ROLL: Stamina + Primal-Urge, 1 success per form crossed. Spend 1 Rage to shift instantly with no roll.",
         "selective": false,
-        "constant": true,
+        "constant": false,
         "position": 0
       },
       {
@@ -1217,7 +1217,7 @@
         ],
         "content": "Seven health levels: Bruised(-0) / Hurt(-1) / Injured(-1) / Wounded(-2) / Mauled(-2) / Crippled(-5) / Incapacitated. The highest-filled level's penalty applies to all dice pools. Bashing soaked by Stamina (Garou regen 1 level/turn automatically). Lethal soaked by Stamina (Garou regen 1/hour). Aggravated soaked by Stamina ONLY in non-breed forms (Homid in Glabro/Crinos/Hispo/Lupus; Lupus in Homid/Glabro/Crinos/Hispo; Metis in Homid/Glabro/Hispo/Lupus). In breed form, no soak for aggravated. SILVER damage is always aggravated to Garou, bypasses regeneration, AND is unsoakable in breed form (Metis cannot soak silver in ANY form). Garou heal 1 aggravated/day with rest. Spend Rage past Incapacitated to keep acting (each Rage point = 1 self-inflicted aggravated). Soak rolls cannot botch and ignore wound penalties.",
         "selective": false,
-        "constant": true,
+        "constant": false,
         "position": 0
       },
       {
@@ -1250,7 +1250,7 @@
         ],
         "content": "FRENZY trigger: a Rage roll scores 4+ successes. Berserk Frenzy = shift Crinos/Hispo and attack; if Rage > Gnosis, may target packmates. Fox Frenzy = shift Lupus and flee; only attack if cornered. Spend 1 Willpower to abort (lose remaining turn). End: each subsequent turn roll Willpower vs difficulty = permanent Rage. THRALL OF THE WYRM at 6+ successes — unbreakable. On Wits diff 7 botch the character commits a breed compulsion (Homid Eater-of-Souls eats kills; Metis Defiler abuses fallen; Lupus Beast-of-War destroys the corpse). DELIRIUM: humans who see Crinos suffer fear / disbelief / panic / bloodlust depending on their Willpower. The Veil makes most humans rationalise the memory (\"It was a bear\"); Willpower 8+ remember clearly. Kinfolk are immune. THE CURSE: humans whose Willpower is lower than the Garou's permanent Rage instinctively avoid the Garou — cross streets, end conversations, refuse to hire. Garou cannot live ordinary human lives because of this.",
         "selective": false,
-        "constant": true,
+        "constant": false,
         "position": 0
       },
       {
