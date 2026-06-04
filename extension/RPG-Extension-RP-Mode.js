@@ -33,6 +33,14 @@ var LS_PROCESSED_MSGS_PFX = "mrrp-processed-msgs-"; // appended with chatId — 
 var MRR_TAG_SPELLBOOK = "mrrp-spellbook";
 var MRR_TAG_CHAR_PFX  = "mrrp-char-";
 var MRR_TAG_CAT_PFX   = "mrrp-cat-";
+/* Phase 7 — sheet-snapshot tag for the manual push/pull cross-device
+   sync. One hidden lorebook entry per chat, content = the same JSON
+   that exportBundle / collectBundle / applyBundle round-trip. enabled
+   is false so the entry never injects into AI context — it's purely a
+   per-chat storage slot the player can save to and load from from a
+   different machine. */
+var MRR_TAG_SHEET_SNAPSHOT = "mrrp-sheet-snapshot";
+var SHEET_SNAPSHOT_NAME = "[Character Bundle Snapshot]";
 var EXT_VERSION      = "0.4.0";
 var BUNDLE_SCHEMA_ID = "mrrp-bundle";
 
@@ -1469,6 +1477,132 @@ function importBundle() {
     var parsed = safeParse(text);
     if (!parsed) { window.alert("Import failed: file is not valid JSON."); return; }
     applyBundle(parsed);
+  });
+}
+
+/* Phase 7 — Sheet snapshot push/pull via the chat's Character Reference
+   lorebook. Same JSON shape as exportBundle's file output, just stored
+   in a hidden lorebook entry (enabled: false) instead of downloaded.
+   Useful for moving a character between two browsers / two machines
+   pointed at the same Marinara host without passing a .json file by
+   hand. One snapshot entry per chat (named SHEET_SNAPSHOT_NAME); upsert
+   on push (PATCH existing, POST if absent); destructive confirm on pull. */
+
+function setSnapshotIndicator(text) {
+  /* Reuse the existing .mrrp-saved-indicator span so the snapshot
+     status surfaces in the same spot the local-save timestamp lives.
+     The next regular saveSheet → updateSavedIndicator call will
+     overwrite this with "Saved HH:MM:SS" — that's fine, snapshot
+     messages are point-in-time. */
+  if (!state.mountEl) return;
+  var ind = state.mountEl.querySelector(".mrrp-saved-indicator");
+  if (ind) ind.textContent = text;
+}
+
+function pushSheetSnapshotToLorebook() {
+  if (!state.ruleset || !state.chatId) {
+    window.alert("Activate a ruleset and open a chat first.");
+    return;
+  }
+  setSnapshotIndicator("Pushing snapshot…");
+  var bundle = collectBundle();
+  var bundleJson = JSON.stringify(bundle);
+  return findOrCreateSpellbookLorebook().then(function (lbId) {
+    return apiFetch("/lorebooks/" + lbId + "/entries").then(function (entries) {
+      var allEntries = Array.isArray(entries) ? entries : [];
+      var existing = allEntries.find(function (e) { return e && e.name === SHEET_SNAPSHOT_NAME; });
+      var body = {
+        name: SHEET_SNAPSHOT_NAME,
+        content: bundleJson,
+        keys: [],
+        selective: false,
+        constant: false,
+        enabled: false,
+        position: 0,
+        role: "system",
+        tags: [MRR_TAG_SHEET_SNAPSHOT, MRR_TAG_SPELLBOOK]
+      };
+      if (existing) {
+        return apiFetch("/lorebooks/" + lbId + "/entries/" + existing.id, {
+          method: "PATCH",
+          body: JSON.stringify(body)
+        }).then(function () { return existing.id; }).catch(function (e) {
+          log("snapshot PATCH failed, falling back to POST: " + (e && e.message));
+          return apiFetch("/lorebooks/" + lbId + "/entries", {
+            method: "POST",
+            body: JSON.stringify(body)
+          }).then(function (resp) { return resp && resp.id; });
+        });
+      }
+      return apiFetch("/lorebooks/" + lbId + "/entries", {
+        method: "POST",
+        body: JSON.stringify(body)
+      }).then(function (resp) { return resp && resp.id; });
+    });
+  }).then(function (entryId) {
+    var charCount = bundle.characters.length;
+    setSnapshotIndicator("Snapshot pushed (" + charCount + " char" + (charCount === 1 ? "" : "s") + ")");
+    log("sheet snapshot pushed: entryId=" + entryId + " bytes=" + bundleJson.length);
+  }).catch(function (e) {
+    setSnapshotIndicator("Push failed — see console");
+    warn("sheet snapshot push failed: " + (e && e.message ? e.message : e));
+    window.alert("Snapshot push failed: " + (e && e.message ? e.message : "unknown error"));
+  });
+}
+
+function pullSheetSnapshotFromLorebook() {
+  if (!state.ruleset || !state.chatId) {
+    window.alert("Activate a ruleset and open a chat first.");
+    return;
+  }
+  setSnapshotIndicator("Looking for snapshot…");
+  return findOrCreateSpellbookLorebook().then(function (lbId) {
+    return apiFetch("/lorebooks/" + lbId + "/entries");
+  }).then(function (entries) {
+    var allEntries = Array.isArray(entries) ? entries : [];
+    var snapshot = allEntries.find(function (e) { return e && e.name === SHEET_SNAPSHOT_NAME; });
+    if (!snapshot) {
+      setSnapshotIndicator("No snapshot — push from another device first");
+      window.alert("No snapshot found in this chat's lorebook. Push from your other device first.");
+      return;
+    }
+    var bundle;
+    try {
+      bundle = JSON.parse(snapshot.content || "");
+    } catch (e) {
+      setSnapshotIndicator("Snapshot corrupt — see console");
+      warn("sheet snapshot parse failed: " + (e && e.message));
+      window.alert("Snapshot entry exists but is not valid JSON: " + e.message);
+      return;
+    }
+    /* Surface enough metadata for the user to make an informed
+       overwrite decision — saved timestamp + character count, both
+       already in the bundle envelope. */
+    var savedLabel = bundle.savedAt || "(unknown time)";
+    var charCount = Array.isArray(bundle.characters) ? bundle.characters.length : 0;
+    var ok = window.confirm(
+      "Pull snapshot saved at:\n  " + savedLabel + "\n\n" +
+      "This will OVERWRITE your local characters and sheets in this chat with the snapshot's " + charCount + " character" + (charCount === 1 ? "" : "s") + ".\n\n" +
+      "Continue?"
+    );
+    if (!ok) {
+      setSnapshotIndicator("Pull cancelled");
+      return;
+    }
+    var success = applyBundle(bundle);
+    if (success) {
+      setSnapshotIndicator("Snapshot pulled (" + charCount + " char" + (charCount === 1 ? "" : "s") + ")");
+      log("sheet snapshot pulled: " + charCount + " character(s), savedAt=" + savedLabel);
+    } else {
+      /* applyBundle surfaces its own error alerts via window.alert
+         (ruleset mismatch, bundle validation failure). Mirror the
+         outcome in the indicator. */
+      setSnapshotIndicator("Pull rejected — see alert");
+    }
+  }).catch(function (e) {
+    setSnapshotIndicator("Pull failed — see console");
+    warn("sheet snapshot pull failed: " + (e && e.message ? e.message : e));
+    window.alert("Snapshot pull failed: " + (e && e.message ? e.message : "unknown error"));
   });
 }
 
@@ -6443,6 +6577,24 @@ function renderSheetHeader(parent) {
     title: "Replace this chat's characters with a previously-saved JSON file"
   });
   if (btnLoad) marinara.on(btnLoad, "click", importBundle);
+
+  /* Phase 7 — Push / Pull snapshot via the chat's Character Reference
+     lorebook. Same bundle shape as save/load above, but stored
+     server-side in a hidden lorebook entry so you can move characters
+     between machines without passing a .json file by hand. */
+  var btnPushSnapshot = marinara.addElement(charRow, "button", {
+    "class": "mrrp-char-btn",
+    textContent: "push",
+    title: "Push a snapshot of this chat's characters to a hidden lorebook entry — pull it from another machine instead of passing a JSON file"
+  });
+  if (btnPushSnapshot) marinara.on(btnPushSnapshot, "click", pushSheetSnapshotToLorebook);
+
+  var btnPullSnapshot = marinara.addElement(charRow, "button", {
+    "class": "mrrp-char-btn",
+    textContent: "pull",
+    title: "Pull the snapshot from this chat's lorebook entry — overwrites your local characters (you'll get a confirmation prompt first)"
+  });
+  if (btnPullSnapshot) marinara.on(btnPullSnapshot, "click", pullSheetSnapshotFromLorebook);
 
   marinara.addElement(charRow, "span", { "class": "mrrp-saved-indicator", textContent: "" });
 
