@@ -10737,20 +10737,59 @@ function getActiveChatTitle() {
 
 function findOrCreateSpellbookLorebook() {
   if (!state.chatId) return Promise.reject(new Error("no active chatId"));
-  if (state.spellbookLbId) return Promise.resolve(state.spellbookLbId);
+  /* Phase 7 fix — validate the cached lorebook id against server reality
+     on the first call per session (or after invalidation). The
+     state.spellbookLbValidated flag flips true once we've confirmed the
+     cached id corresponds to a real lorebook on the server; subsequent
+     in-session calls take the fast in-memory path.
+
+     Why this matters: Marinara's API returns success-shaped responses
+     (200 with an empty body / {} / []) for GET/POST/PATCH against a
+     deleted lorebook id, NOT 404 with an error. The previous code
+     would happily use a stale cached id forever — the Re-sync button
+     reported "Synced N entries" while writing nothing, because the
+     individual upserts returned `undefined` entry ids and were counted
+     as "refreshed" by the pushJob accounting. */
+  if (state.spellbookLbId && state.spellbookLbValidated) {
+    return Promise.resolve(state.spellbookLbId);
+  }
   var cacheKey = LS_SPELLBOOK_LB_PFX + state.chatId;
   var cached = lsGet(cacheKey);
-  if (cached) { state.spellbookLbId = cached; return Promise.resolve(cached); }
 
+  /* Always fetch the server's lorebook list when validation hasn't run
+     yet — costs one extra GET per session, catches all deleted-lore-
+     book / stale-cache cases at the source. */
   return apiFetch("/lorebooks").then(function (lbs) {
-    var existing = Array.isArray(lbs) ? lbs.find(function (lb) {
+    var lbsArr = Array.isArray(lbs) ? lbs : [];
+
+    /* Prefer the cached id if it's still on the server — preserves
+       continuity (so entry ids on the sheet stay valid). */
+    if (cached) {
+      var foundCached = lbsArr.find(function (lb) { return lb && lb.id === cached; });
+      if (foundCached) {
+        state.spellbookLbId = cached;
+        state.spellbookLbValidated = true;
+        return cached;
+      }
+      log("spellbook cache stale (id " + cached + " not on server); recreating");
+      lsDel(cacheKey);
+      state.spellbookLbId = null;
+    }
+
+    /* Cache was missing or stale. Look for an existing lorebook
+       tagged for this chat (a previous extension session may have
+       created one this client doesn't know about). */
+    var existing = lbsArr.find(function (lb) {
       return lb && lb.chatId === state.chatId && Array.isArray(lb.tags) && lb.tags.indexOf(MRR_TAG_SPELLBOOK) >= 0;
-    }) : null;
+    });
     if (existing && existing.id) {
       state.spellbookLbId = existing.id;
+      state.spellbookLbValidated = true;
       lsSet(cacheKey, existing.id);
       return existing.id;
     }
+
+    /* No matching lorebook exists — create one. */
     var body = {
       /* Phase 7 — the lorebook now houses charms AND backgrounds, merits,
          flaws, and items. Renamed from "Player Spellbook" to "Character
@@ -10768,6 +10807,7 @@ function findOrCreateSpellbookLorebook() {
     return apiFetch("/lorebooks", { method: "POST", body: JSON.stringify(body) }).then(function (lb) {
       if (!lb || !lb.id) throw new Error("lorebook create: no id returned");
       state.spellbookLbId = lb.id;
+      state.spellbookLbValidated = true;
       lsSet(cacheKey, lb.id);
       return lb.id;
     });
@@ -10776,6 +10816,7 @@ function findOrCreateSpellbookLorebook() {
 
 function invalidateSpellbookLorebookCache() {
   state.spellbookLbId = null;
+  state.spellbookLbValidated = false;
   if (state.chatId) lsDel(LS_SPELLBOOK_LB_PFX + state.chatId);
 }
 
