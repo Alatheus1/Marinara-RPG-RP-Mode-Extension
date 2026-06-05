@@ -1543,7 +1543,11 @@ function pushSheetSnapshotToLorebook() {
   });
   }).then(function (entryId) {
     var charCount = bundle.characters.length;
-    setSnapshotIndicator("Snapshot pushed (" + charCount + " char" + (charCount === 1 ? "" : "s") + ")");
+    var msg = "Snapshot pushed (" + charCount + " char" + (charCount === 1 ? "" : "s") + ")";
+    if (consumeLorebookCreatedFlag()) {
+      msg += " · NEW lorebook — refresh page to see it";
+    }
+    setSnapshotIndicator(msg);
     log("sheet snapshot pushed: entryId=" + entryId + " bytes=" + bundleJson.length);
   }).catch(function (e) {
     setSnapshotIndicator("Push failed — see console");
@@ -9842,6 +9846,13 @@ function renderSpellbookContents() {
           else if (existingCount) parts.push("(" + existingCount + " refreshed)");
           msg = parts.join(" ");
           if (failedCount) msg += " — " + failedCount + " failed (see console)";
+          /* Phase 7 — Marinara's lorebook UI lists what was on the
+             server at page-load; a freshly POSTed lorebook isn't in
+             that snapshot. Nudge the user to refresh ONCE per
+             creation. */
+          if (consumeLorebookCreatedFlag()) {
+            msg += " · NEW lorebook created — refresh the page to see it in Marinara's lorebook UI";
+          }
           kind = failedCount ? "warn" : "ok";
         }
         setSyncMsg(msg, kind);
@@ -10821,6 +10832,12 @@ function findOrCreateSpellbookLorebook() {
       if (!lb || !lb.id) throw new Error("lorebook create: no id returned");
       state.spellbookLbId = lb.id;
       state.spellbookLbValidated = true;
+      /* Phase 7 — one-shot flag so the next operation's user-facing
+         status message can hint that Marinara's lorebook UI won't
+         show the freshly-created lorebook until the page is refreshed
+         (the UI list is fetched once on page load). Consumed +
+         cleared by consumeLorebookCreatedFlag(). */
+      state.spellbookLbJustCreated = true;
       lsSet(cacheKey, lb.id);
       return lb.id;
     });
@@ -10840,6 +10857,19 @@ function invalidateSpellbookLorebookCache() {
   state.spellbookLbValidated = false;
   state.spellbookLbPending = null;
   if (state.chatId) lsDel(LS_SPELLBOOK_LB_PFX + state.chatId);
+}
+
+/* Phase 7 — one-shot read-and-clear for the "just created a new
+   lorebook" flag. Caller is whichever user-facing status formatter
+   wants to nudge the user to refresh Marinara's lorebook list UI (it
+   doesn't auto-refresh after a POST /lorebooks). Returns true exactly
+   once per fresh lorebook creation. */
+function consumeLorebookCreatedFlag() {
+  if (state.spellbookLbJustCreated) {
+    state.spellbookLbJustCreated = false;
+    return true;
+  }
+  return false;
 }
 
 /* Phase 7 — recover from a deleted Character Reference lorebook.
