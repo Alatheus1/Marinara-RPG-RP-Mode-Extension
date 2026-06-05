@@ -1507,6 +1507,7 @@ function pushSheetSnapshotToLorebook() {
   setSnapshotIndicator("Pushing snapshot…");
   var bundle = collectBundle();
   var bundleJson = JSON.stringify(bundle);
+  return withLorebookRetry(function () {
   return findOrCreateSpellbookLorebook().then(function (lbId) {
     return apiFetch("/lorebooks/" + lbId + "/entries").then(function (entries) {
       var allEntries = Array.isArray(entries) ? entries : [];
@@ -1539,6 +1540,7 @@ function pushSheetSnapshotToLorebook() {
         body: JSON.stringify(body)
       }).then(function (resp) { return resp && resp.id; });
     });
+  });
   }).then(function (entryId) {
     var charCount = bundle.characters.length;
     setSnapshotIndicator("Snapshot pushed (" + charCount + " char" + (charCount === 1 ? "" : "s") + ")");
@@ -1556,8 +1558,10 @@ function pullSheetSnapshotFromLorebook() {
     return;
   }
   setSnapshotIndicator("Looking for snapshot…");
-  return findOrCreateSpellbookLorebook().then(function (lbId) {
-    return apiFetch("/lorebooks/" + lbId + "/entries");
+  return withLorebookRetry(function () {
+    return findOrCreateSpellbookLorebook().then(function (lbId) {
+      return apiFetch("/lorebooks/" + lbId + "/entries");
+    });
   }).then(function (entries) {
     var allEntries = Array.isArray(entries) ? entries : [];
     var snapshot = allEntries.find(function (e) { return e && e.name === SHEET_SNAPSHOT_NAME; });
@@ -9819,13 +9823,28 @@ function renderSpellbookContents() {
         var failedCount = results.filter(function (r) { return r === null; }).length;
         var existingCount = results.length - newCount - failedCount;
         saveSheet(state.chatId, state.sheet);
-        var parts = ["Synced " + results.length + " entries to this chat's spellbook"];
-        if (newCount) parts.push("(" + newCount + " newly tracked");
-        if (existingCount && newCount) parts.push(existingCount + " refreshed)");
-        else if (existingCount) parts.push("(" + existingCount + " refreshed)");
-        var msg = parts.join(" ");
-        if (failedCount) msg += " — " + failedCount + " failed (see console)";
-        setSyncMsg(msg, failedCount ? "warn" : "ok");
+        /* Phase 7 — when EVERY job fails, the previous status message
+           started with "Synced N entries..." then appended "— N failed"
+           which buried the failure. Now an all-fail outcome leads with
+           "Sync failed:" so it can't be missed. The most common cause
+           is the user deleting the chat lorebook in Marinara's UI; the
+           withLorebookRetry wrapper handles that case automatically,
+           but if it still fails (network, auth, etc.) the message
+           points at the console for the actual error message. */
+        var msg, kind;
+        if (failedCount === results.length) {
+          msg = "Sync failed — 0 of " + results.length + " entries reached the lorebook (see console). If you deleted the chat lorebook, the next attempt will recreate it.";
+          kind = "err";
+        } else {
+          var parts = ["Synced " + results.length + " entries to this chat's lorebook"];
+          if (newCount) parts.push("(" + newCount + " newly tracked");
+          if (existingCount && newCount) parts.push(existingCount + " refreshed)");
+          else if (existingCount) parts.push("(" + existingCount + " refreshed)");
+          msg = parts.join(" ");
+          if (failedCount) msg += " — " + failedCount + " failed (see console)";
+          kind = failedCount ? "warn" : "ok";
+        }
+        setSyncMsg(msg, kind);
       });
     });
   }
@@ -10760,6 +10779,39 @@ function invalidateSpellbookLorebookCache() {
   if (state.chatId) lsDel(LS_SPELLBOOK_LB_PFX + state.chatId);
 }
 
+/* Phase 7 — recover from a deleted Character Reference lorebook.
+   If the user deletes the lorebook via Marinara's UI mid-session, the
+   extension's cached lorebook id (state.spellbookLbId +
+   localStorage LS_SPELLBOOK_LB_PFX entry) still points at a server-
+   side lorebook that no longer exists. The next GET/PATCH/POST against
+   that id fails (usually 404, sometimes a 400/500 with a 'not found'
+   message — engine-specific). This wrapper catches the first such
+   error, invalidates the cache so the next findOrCreate runs the full
+   /lorebooks lookup (which finds nothing and creates a fresh one),
+   then retries the operation once. The retry runs against the new
+   lorebook id, so a freshly-recreated lorebook gets populated cleanly.
+
+   Heuristic: any error whose status is 404, OR whose message contains
+   'not found' / '404' / 'lorebook' / 'no such', triggers a retry. We
+   err on the side of retrying — a wasteful extra attempt is cheaper
+   than a silent sync that pretends to succeed but doesn't write
+   anything. */
+function withLorebookRetry(operationFn) {
+  return operationFn().catch(function (e) {
+    var msg = (e && e.message) ? String(e.message) : String(e || "");
+    var looksLikeMissingLorebook =
+      (e && e.status === 404)
+      || /\b404\b/.test(msg)
+      || /not found/i.test(msg)
+      || /no such/i.test(msg)
+      || /lorebook/i.test(msg);
+    if (!looksLikeMissingLorebook) throw e;
+    warn("lorebook operation failed (" + msg + "); invalidating cache and retrying once");
+    invalidateSpellbookLorebookCache();
+    return operationFn();
+  });
+}
+
 /* Phase 7 — singularise an abilities.label for use as the per-entry
    "kind" tag in lorebook headers. "Charms" → "Charm", "Disciplines" →
    "Discipline", "Gifts & Rites" → kept as-is (multi-word, ambiguous to
@@ -10977,6 +11029,7 @@ function upsertSheetEntryLorebook(kind, entry, charId, extraCtx) {
   if (!keyword) return Promise.resolve(null);
   var body = sheetEntryLorebookBody(kind, entry, charId, extraCtx);
   if (!body) return Promise.resolve(null);
+  return withLorebookRetry(function () {
   return findOrCreateSpellbookLorebook().then(function (lbId) {
     return apiFetch("/lorebooks/" + lbId + "/entries").then(function (allEntries) {
       var entries = Array.isArray(allEntries) ? allEntries : [];
@@ -11042,11 +11095,17 @@ function upsertSheetEntryLorebook(kind, entry, charId, extraCtx) {
       });
     });
   });
+  }); /* close withLorebookRetry */
 }
 
 function deleteSheetEntryLorebook(entry) {
   if (!entry || !entry.lorebookEntryId || !state.spellbookLbId) return Promise.resolve();
-  return apiDeleteRaw("/lorebooks/" + state.spellbookLbId + "/entries/" + entry.lorebookEntryId);
+  /* Best-effort delete. Wrapped in withLorebookRetry mainly for
+     symmetry with the upsert path — if the lorebook is already gone,
+     the entry is too, and we silently succeed on retry by no-op. */
+  return withLorebookRetry(function () {
+    return apiDeleteRaw("/lorebooks/" + state.spellbookLbId + "/entries/" + entry.lorebookEntryId);
+  });
 }
 
 /* Phase 7 — thin compat wrappers around the new generic helpers. The
