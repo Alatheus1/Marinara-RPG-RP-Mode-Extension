@@ -10749,9 +10749,22 @@ function findOrCreateSpellbookLorebook() {
      would happily use a stale cached id forever — the Re-sync button
      reported "Synced N entries" while writing nothing, because the
      individual upserts returned `undefined` entry ids and were counted
-     as "refreshed" by the pushJob accounting. */
+     as "refreshed" by the pushJob accounting.
+
+     IN-FLIGHT SINGLETON: the Re-sync button fires 16 concurrent upserts.
+     Without serialisation, the first 16 findOrCreate calls each see
+     the unvalidated state, each fetch /lorebooks, each see no matching
+     lorebook, and each POST a fresh one — N entries → N lorebooks.
+     The pending-promise gate ensures only the FIRST call does the work;
+     subsequent concurrent calls await the same promise and continue
+     with the lorebook id it resolves to. The .finally clears the gate
+     on both success and failure so a transient error doesn't wedge
+     future calls. */
   if (state.spellbookLbId && state.spellbookLbValidated) {
     return Promise.resolve(state.spellbookLbId);
+  }
+  if (state.spellbookLbPending) {
+    return state.spellbookLbPending;
   }
   var cacheKey = LS_SPELLBOOK_LB_PFX + state.chatId;
   var cached = lsGet(cacheKey);
@@ -10759,7 +10772,7 @@ function findOrCreateSpellbookLorebook() {
   /* Always fetch the server's lorebook list when validation hasn't run
      yet — costs one extra GET per session, catches all deleted-lore-
      book / stale-cache cases at the source. */
-  return apiFetch("/lorebooks").then(function (lbs) {
+  var pending = apiFetch("/lorebooks").then(function (lbs) {
     var lbsArr = Array.isArray(lbs) ? lbs : [];
 
     /* Prefer the cached id if it's still on the server — preserves
@@ -10812,11 +10825,20 @@ function findOrCreateSpellbookLorebook() {
       return lb.id;
     });
   });
+
+  /* Promise.prototype.finally isn't universally polyfilled in the
+     engines the extension targets — use then/catch chained equivalents
+     so the gate clears reliably on either outcome. */
+  pending.then(function () { state.spellbookLbPending = null; },
+               function () { state.spellbookLbPending = null; });
+  state.spellbookLbPending = pending;
+  return pending;
 }
 
 function invalidateSpellbookLorebookCache() {
   state.spellbookLbId = null;
   state.spellbookLbValidated = false;
+  state.spellbookLbPending = null;
   if (state.chatId) lsDel(LS_SPELLBOOK_LB_PFX + state.chatId);
 }
 
